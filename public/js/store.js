@@ -2,7 +2,7 @@
 const KEY = "liya-tutor.v1";
 
 const DEFAULTS = {
-  settings: { name: "ליה", accessCode: "", subject: "math", penOnly: true, provider: "gemini", geminiKey: "", geminiModel: "", geminiModels: [] },
+  settings: { name: "ליה", accessCode: "", subject: "math", penOnly: true, theme: "", provider: "gemini", geminiKey: "", geminiModel: "", geminiModels: [] },
   syllabus: {}, // topicId -> "learning" | "done"
   practice: [], // {ts, subject, topic, difficulty, score}
   tests: [],    // {ts, subject, kind, title, total, max, summary, weak_topics}

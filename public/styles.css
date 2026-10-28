@@ -34,8 +34,11 @@
 }
 :root[data-theme="dark"] {
   --bg: #0f1117; --surface: #181b24; --surface-2: #222634; --text: #eef0f6; --muted: #9aa1b2;
-  --border: #2c3142; --accent: #818cf8; --accent-soft: #2a2f55; --accent-text: #0f1117; color-scheme: dark;
+  --border: #2c3142; --accent: #818cf8; --accent-soft: #2a2f55; --accent-text: #0f1117;
+  --good: #34d399; --good-soft: #0f2e25; --mid: #fbbf24; --mid-soft: #33290d; --bad: #f87171; --bad-soft: #3a1717;
+  --user-bubble: #4f46e5; --shadow: none; --grid: rgb(129 140 248 / 0.12); color-scheme: dark;
 }
+:root[data-theme="dark"][data-subject="physics"] { --accent: #22d3ee; --accent-soft: #123b44; --user-bubble: #0e7490; }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -253,3 +256,14 @@ a.callout.setup { display: block; margin-top: 18px; text-decoration: none; color
 /* ---- footer ---- */
 .site-footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
 .site-footer a { color: inherit; }
+
+/* ---- toggle switch ---- */
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 420px; margin: 10px 0; }
+.switch { position: relative; width: 52px; height: 32px; flex: none; }
+.switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+.switch .track { position: absolute; inset: 0; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); transition: background .2s; }
+.switch .track::after { content: ""; position: absolute; top: 3px; inset-inline-start: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .3); transition: transform .2s; }
+.switch input:checked + .track { background: var(--accent); border-color: var(--accent); }
+.switch input:checked + .track::after { transform: translateX(-20px); }
+.switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+.link-btn { background: none; border: 0; color: var(--accent); font: inherit; font-size: 0.88rem; padding: 0; cursor: pointer; text-decoration: underline; }
