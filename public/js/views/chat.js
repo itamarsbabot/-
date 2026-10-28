@@ -4,6 +4,7 @@ import { askTutor, userContent } from "../api.js";
 import { Composer } from "../composer.js";
 import { SUBJECTS, allTopics } from "../curriculum.js";
 import { pickerTopics } from "../topics.js";
+import { canSpeak, speak, stopSpeaking, isSpeaking, unlockSpeech } from "../speech.js";
 
 let handoff = null;
 // Open a chat with a first message already sent (e.g. from a practice question).
@@ -22,7 +23,10 @@ const HW_CHIPS = [
   ["👣 הצעד הבא", "מה הצעד הבא שאני צריכה לעשות?"],
   ["✅ בדקי את הפתרון שלי", "בדקי בבקשה את הפתרון שלי שורה-שורה ותגידי איפה טעיתי, בלי לתקן במקומי."],
   ["📖 פתרון מלא", "אני רוצה לראות פתרון מלא ומסודר, בבקשה."],
+  ["📊 שרטוט", "תסבירי לי את זה עם שרטוט או גרף, בבקשה."],
 ];
+
+const VISUAL_ASK = "תסבירי לי את זה שוב עם שרטוט או גרף, בבקשה.";
 
 export function chatView(mode) {
   const subject = store.subject;
@@ -38,7 +42,19 @@ export function chatView(mode) {
     placeholder: mode === "homework" ? "הקלידי את השאלה, או צלמי / כתבי בעט…" : "שאלי אותי כל דבר…",
     sendLabel: "שליחה ←",
     onSend: (v) => send(v),
+    mic: true,
+    compact: true,
+    // In voice mode, a finished dictation is sent right away – like a conversation.
+    onDictated: () => { if (store.settings.voiceMode) composer.send(); },
   });
+
+  // 🔊 button on each tutor answer.
+  function speakButton(getText) {
+    if (!canSpeak) return null;
+    const b = h("button", { type: "button", class: "speak-btn", "aria-label": "הקראה", title: "הקראה" }, "🔊");
+    b.addEventListener("click", () => { if (isSpeaking(b)) stopSpeaking(); else speak(getText(), { button: b }); });
+    return b;
+  }
 
   function bubble(m) {
     const body = h("div", { class: "bubble-body" });
@@ -48,7 +64,8 @@ export function chatView(mode) {
       for (const im of m.images || []) body.append(h("img", { class: "msg-img", src: im.preview, alt: im.handwriting ? "כתב יד" : "תמונה" }));
       if (m.hadImage && !(m.images || []).length) body.append(h("div", { class: "muted small" }, "📎 תמונה"));
     }
-    return h("div", { class: `bubble ${m.role}` }, body);
+    const tools = m.role === "assistant" && m.text ? h("div", { class: "bubble-tools" }, speakButton(() => m.text)) : null;
+    return h("div", { class: `bubble ${m.role}` }, body, tools);
   }
 
   function renderAll() {
@@ -71,6 +88,7 @@ export function chatView(mode) {
   async function send({ text, images }) {
     if (busy) return;
     busy = true;
+    stopSpeaking();
     msgs.push({ role: "user", text, images });
     composer.clear();
     list.append(bubble(msgs.at(-1)));
@@ -94,6 +112,9 @@ export function chatView(mode) {
       });
       cancelAnimationFrame(raf);
       setRich(body, a.text);
+      const sb = speakButton(() => a.text);
+      if (sb) b.append(h("div", { class: "bubble-tools" }, sb));
+      if (store.settings.voiceMode && sb) speak(a.text, { button: sb });
       msgs.push(a);
       store.setChat(key, msgs);
     } catch (e) {
@@ -115,14 +136,33 @@ export function chatView(mode) {
           const v = composer.value();
           send({ text: v.text ? `${v.text}\n\n${text}` : text, images: v.images });
         } }, label)))
-    : topicPicker((topic) => send({ text: `אני רוצה ללמוד את הנושא: ${topic}. תתחילי מהבסיס ותבני לי הבנה עמוקה.`, images: [] }));
+    : h("div", { class: "chips" },
+        topicPicker((topic) => send({ text: `אני רוצה ללמוד את הנושא: ${topic}. תתחילי מהבסיס ותבני לי הבנה עמוקה.`, images: [] })),
+        h("button", { class: "chip", type: "button", onclick: () => send({ text: VISUAL_ASK, images: [] }) }, "📊 תראי לי בשרטוט"));
+
+  // Voice mode: answers are read aloud automatically, and speaking sends the question.
+  const voiceBtn = canSpeak ? h("button", { type: "button", class: "btn small ghost voice-toggle" }) : null;
+  const syncVoice = () => {
+    if (!voiceBtn) return;
+    voiceBtn.textContent = store.settings.voiceMode ? "🔊 מצב קולי: פועל" : "🔈 מצב קולי";
+    voiceBtn.classList.toggle("on", !!store.settings.voiceMode);
+  };
+  voiceBtn?.addEventListener("click", () => {
+    const on = !store.settings.voiceMode;
+    store.setSetting("voiceMode", on);
+    if (on) { unlockSpeech(); toast("מצב קולי: התשובות יוקראו בקול. לחצי 🎙️ כדי לדבר", 4000); }
+    else stopSpeaking();
+    syncVoice();
+  });
+  syncVoice();
 
   const el = h("section", { class: "chat" },
     h("div", { class: "view-head" },
       h("h2", {}, title, h("span", { class: "muted" }, ` · ${SUBJECTS[subject].name}`)),
+      h("div", { class: "row tight" }, voiceBtn,
       h("button", { class: "btn ghost small", onclick: () => {
         if (!msgs.length || confirm("להתחיל שיחה חדשה? השיחה הנוכחית תימחק.")) { ctrl?.abort(); msgs = []; store.clearChat(key); renderAll(); }
-      } }, "שיחה חדשה")),
+      } }, "שיחה חדשה"))),
     list,
     h("div", { class: "chat-input" }, chips, composer.el),
   );
@@ -133,7 +173,7 @@ export function chatView(mode) {
     handoff = null;
     queueMicrotask(() => send({ text: t, images: [] }));
   }
-  return { el, cleanup: () => ctrl?.abort() };
+  return { el, cleanup: () => { ctrl?.abort(); stopSpeaking(); } };
 }
 
 function topicPicker(onPick) {
@@ -141,7 +181,7 @@ function topicPicker(onPick) {
     h("option", { value: "" }, "📚 בחרי נושא ללמוד…"),
     ...topicOptions(store.subject));
   sel.addEventListener("change", () => { if (sel.value) { onPick(sel.value); sel.value = ""; } });
-  return h("div", { class: "chips" }, sel);
+  return sel;
 }
 
 // <option>s: current topics first, then the rest of the syllabus.
