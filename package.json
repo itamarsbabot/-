@@ -1,0 +1,14 @@
+{
+  "name": "liya-tutor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "מורה פרטי למתמטיקה ופיזיקה – כיתה י׳, 5 יח״ל",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0"
+  }
+}
