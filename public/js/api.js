@@ -67,7 +67,9 @@ async function geminiError(res) {
   try { const j = await res.json(); msg = j.error?.message || ""; status = j.error?.status || ""; } catch {}
   const he =
     res.status === 400 && /API key/i.test(msg) ? "מפתח Gemini לא תקין – בדקי אותו בהגדרות" :
+    res.status === 402 ? "לפרויקט של המפתח הזה בגוגל אין יתרה (מסלול Prepaid). צריך מפתח מפרויקט חינמי בלי חיוב, או להטעין קרדיט ב-AI Studio" :
     res.status === 403 ? "למפתח אין הרשאה ל-Gemini API" :
+    res.status === 429 && /prepay/i.test(msg) ? "לפרויקט של המפתח הזה בגוגל אין יתרה. צריך מפתח מפרויקט חינמי בלי חיוב" :
     res.status === 429 ? "נגמרה המכסה החינמית של Gemini כרגע – נסי שוב בעוד דקה (או מחר)" :
     res.status === 404 ? "המודל לא נמצא – לחצי \"בדיקת חיבור\" בהגדרות" :
     res.status >= 500 ? "Gemini עמוס כרגע – נסי שוב" :
