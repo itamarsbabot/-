@@ -2,6 +2,7 @@
 import { h, toast } from "./render.js";
 import { PencilPad } from "./pad.js";
 import { fileToImage } from "./api.js";
+import { canListen, listen } from "./speech.js";
 
 const SYMBOLS = [
   ["√", "√"], ["²", "²"], ["³", "³"], ["^", "^"], ["π", "π"], ["°", "°"],
@@ -11,19 +12,24 @@ const SYMBOLS = [
 ];
 
 export class Composer {
-  constructor({ placeholder = "כתבי כאן…", sendLabel = null, onSend = null, padOpen = false, compact = false } = {}) {
+  constructor({ placeholder = "כתבי כאן…", sendLabel = null, onSend = null, padOpen = false, compact = false, mic = false, onDictated = null } = {}) {
     this.images = [];
     this.pad = null;
     this.onSend = onSend;
+    this.onDictated = onDictated;
+    this.stopListening = null;
 
-    this.text = h("textarea", { class: "comp-text", rows: compact ? 2 : 3, placeholder, dir: "auto" });
+    this.text = h("textarea", { class: "comp-text", rows: compact ? 1 : 3, placeholder, dir: "auto" });
     this.text.addEventListener("input", () => this.autosize());
     this.text.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && this.onSend) { e.preventDefault(); this.send(); }
     });
 
-    this.symBar = h("div", { class: "sym-bar", hidden: true },
-      ...SYMBOLS.map(([label, ins]) => h("button", { type: "button", class: "sym", onclick: () => this.insert(ins) }, label)));
+    // One scrollable row of symbols, with a button to fold it away.
+    this.symBar = h("div", { class: "sym-wrap", hidden: true },
+      h("div", { class: "sym-bar" },
+        ...SYMBOLS.map(([label, ins]) => h("button", { type: "button", class: "sym", onclick: () => this.insert(ins) }, label))),
+      h("button", { type: "button", class: "sym-close", "aria-label": "סגירת הסימנים", title: "סגירה", onclick: () => this.toggleSymbols(false) }, "⌄"));
 
     this.thumbs = h("div", { class: "thumbs" });
     this.padHolder = h("div", { class: "pad-holder" });
@@ -34,13 +40,44 @@ export class Composer {
     const actions = h("div", { class: "comp-actions" },
       this.padBtn,
       h("button", { type: "button", class: "chip", onclick: () => this.file.click() }, "📷 צילום / תמונה"),
-      h("button", { type: "button", class: "chip", onclick: () => { this.symBar.hidden = !this.symBar.hidden; } }, "∑ סימנים"),
+      this.symBtn = h("button", { type: "button", class: "chip", onclick: () => this.toggleSymbols() }, "∑ סימנים"),
       h("span", { class: "spacer" }),
+      mic && canListen ? (this.micBtn = h("button", { type: "button", class: "mic-btn", "aria-label": "דיבור", title: "לחצי ודברי", onclick: () => this.toggleMic() }, "🎙️")) : null,
       sendLabel && h("button", { type: "button", class: "btn primary", onclick: () => this.send() }, sendLabel),
     );
 
     this.el = h("div", { class: "composer" + (compact ? " compact" : "") }, this.padHolder, this.thumbs, this.text, this.symBar, actions, this.file);
     if (padOpen) queueMicrotask(() => this.togglePad(true));
+  }
+
+  toggleSymbols(force) {
+    this.symBar.hidden = !(force ?? this.symBar.hidden);
+    this.symBtn.classList.toggle("on", !this.symBar.hidden);
+  }
+
+  // Dictation: speak in Hebrew, the text appears in the box.
+  toggleMic() {
+    if (this.stopListening) { this.stopListening(); return; }
+    const before = this.text.value ? this.text.value.trimEnd() + " " : "";
+    this.micBtn.classList.add("on");
+    try {
+      this.stopListening = listen({
+        onText: (t) => { this.text.value = before + t; this.autosize(); },
+        onEnd: (finalText) => {
+          this.stopListening = null;
+          this.micBtn.classList.remove("on");
+          if (finalText && this.onDictated) this.onDictated();
+        },
+        onError: (err) => {
+          if (err === "not-allowed" || err === "service-not-allowed") toast("צריך לאשר גישה למיקרופון (או להשתמש במיקרופון שבמקלדת)", 5000);
+          else if (err !== "no-speech" && err !== "aborted") toast("הדיבור לא נקלט – נסי שוב");
+        },
+      });
+    } catch {
+      this.micBtn.classList.remove("on");
+      this.stopListening = null;
+      toast("אפשר להשתמש במיקרופון שבמקלדת של האייפד 🎙️");
+    }
   }
 
   autosize() {

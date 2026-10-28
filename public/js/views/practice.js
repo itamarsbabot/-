@@ -4,6 +4,14 @@ import { askTutor, userContent, extractJSON } from "../api.js";
 import { Composer } from "../composer.js";
 import { SUBJECTS, DIFFICULTY } from "../curriculum.js";
 import { openChatWith, topicOptions } from "./chat.js";
+import { canSpeak, speak, stopSpeaking, isSpeaking } from "../speech.js";
+
+function speakBtn(getText) {
+  if (!canSpeak) return null;
+  const b = h("button", { type: "button", class: "speak-btn", "aria-label": "הקראה", title: "הקראה" }, "🔊");
+  b.addEventListener("click", () => { if (isSpeaking(b)) stopSpeaking(); else speak(getText(), { button: b }); });
+  return b;
+}
 import { pickerTopics } from "../topics.js";
 
 export function practiceView(params = {}) {
@@ -60,7 +68,7 @@ export function practiceView(params = {}) {
     const checkBtn = h("button", { class: "btn primary", onclick: () => grade(composer, checkBtn) }, "בדקי את התשובה ✓");
     stage.replaceChildren(
       h("article", { class: "q-card" },
-        h("div", { class: "q-meta" }, h("span", { class: "tag" }, current.topic), h("span", { class: "tag soft" }, `קושי ${difficulty}`)),
+        h("div", { class: "q-meta" }, h("span", { class: "tag" }, current.topic), h("span", { class: "tag soft" }, `קושי ${difficulty}`), h("span", { class: "spacer" }), speakBtn(() => current.question)),
         q),
       composer.el,
       h("div", { class: "row" },
@@ -91,7 +99,7 @@ export function practiceView(params = {}) {
       stage.append(h("div", { class: `feedback ${score >= 80 ? "good" : score >= 50 ? "mid" : "bad"}` },
         h("div", { class: "score" }, `${score}`, h("small", {}, "/100")),
         fb,
-        h("div", { class: "row" },
+        h("div", { class: "row" }, speakBtn(() => r.feedback || ""),
           h("button", { class: "btn primary", onclick: () => { diff.value = nextD; syncDiff(); next(); } }, `שאלה הבאה (קושי ${nextD}) ←`),
           score < 100 ? h("button", { class: "btn ghost", onclick: () => { btn.disabled = false; btn.textContent = "בדקי שוב ✓"; } }, "אנסה לתקן") : null,
           h("button", { class: "btn ghost", onclick: showSolution }, "פתרון מלא"))));
@@ -120,7 +128,7 @@ export function practiceView(params = {}) {
       h("button", { class: "btn primary", onclick: next }, "שאלה חדשה ←")),
     stage);
   stage.append(h("p", { class: "muted center" }, "בחרי נושא וקושי ולחצי על \"שאלה חדשה\". הקושי מתעדכן אוטומטית לפי ההצלחה שלך."));
-  return { el, cleanup: () => ctrl?.abort() };
+  return { el, cleanup: () => { ctrl?.abort(); stopSpeaking(); } };
 }
 
 export function loading(text) {
