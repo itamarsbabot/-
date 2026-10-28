@@ -3,11 +3,12 @@ import { store } from "../store.js";
 import { askTutor, userContent, extractJSON } from "../api.js";
 import { Composer } from "../composer.js";
 import { SUBJECTS, DIFFICULTY } from "../curriculum.js";
-import { openChatWith } from "./chat.js";
+import { openChatWith, topicOptions } from "./chat.js";
+import { pickerTopics } from "../topics.js";
 
-export function practiceView() {
+export function practiceView(params = {}) {
   const subject = store.subject;
-  const topics = SUBJECTS[subject].topics;
+  const topics = pickerTopics(subject);
   const asked = []; // questions asked this session, to avoid repeats
   let current = null;
   let ctrl = null;
@@ -17,9 +18,10 @@ export function practiceView() {
   let difficulty = last?.nextDifficulty || 3;
 
   const topicSel = h("select", { class: "select" },
-    h("option", { value: "" }, "🔀 מעורב – כל הנושאים"),
-    ...topics.map((t) => h("option", { value: t }, t)));
-  if (last?.topicChoice) topicSel.value = last.topicChoice;
+    h("option", { value: "" }, "🔀 מעורב – מהנושאים שלמדנו"),
+    ...topicOptions(subject));
+  if (params.topic) topicSel.value = params.topic;
+  else if (last?.topicChoice) topicSel.value = last.topicChoice;
 
   const diffLabel = h("span", { class: "diff-label" });
   const diff = h("input", { type: "range", min: 1, max: 5, step: 1, value: difficulty, class: "range", "aria-label": "דרגת קושי" });

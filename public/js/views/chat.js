@@ -2,7 +2,8 @@ import { h, setRich, toast } from "../render.js";
 import { store } from "../store.js";
 import { askTutor, userContent } from "../api.js";
 import { Composer } from "../composer.js";
-import { SUBJECTS } from "../curriculum.js";
+import { SUBJECTS, allTopics } from "../curriculum.js";
+import { pickerTopics } from "../topics.js";
 
 let handoff = null;
 // Open a chat with a first message already sent (e.g. from a practice question).
@@ -138,7 +139,17 @@ export function chatView(mode) {
 function topicPicker(onPick) {
   const sel = h("select", { class: "select", "aria-label": "בחרי נושא ללמידה" },
     h("option", { value: "" }, "📚 בחרי נושא ללמוד…"),
-    ...SUBJECTS[store.subject].topics.map((t) => h("option", { value: t }, t)));
+    ...topicOptions(store.subject));
   sel.addEventListener("change", () => { if (sel.value) { onPick(sel.value); sel.value = ""; } });
   return h("div", { class: "chips" }, sel);
+}
+
+// <option>s: current topics first, then the rest of the syllabus.
+export function topicOptions(subject) {
+  const main = pickerTopics(subject);
+  const rest = allTopics(subject).map((t) => t.name).filter((n) => !main.includes(n));
+  return [
+    ...main.map((t) => h("option", { value: t }, t)),
+    rest.length ? h("optgroup", { label: "עוד נושאים מהסילבוס" }, ...rest.map((t) => h("option", { value: t }, t))) : null,
+  ];
 }

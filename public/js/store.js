@@ -2,7 +2,8 @@
 const KEY = "liya-tutor.v1";
 
 const DEFAULTS = {
-  settings: { name: "ליה", accessCode: "", subject: "math", penOnly: true },
+  settings: { name: "ליה", accessCode: "", subject: "math", penOnly: true, provider: "gemini", geminiKey: "", geminiModel: "", geminiModels: [] },
+  syllabus: {}, // topicId -> "learning" | "done"
   practice: [], // {ts, subject, topic, difficulty, score}
   tests: [],    // {ts, subject, kind, title, total, max, summary, weak_topics}
   chats: {},    // "tutor:math" -> [{role, text}]
@@ -15,7 +16,7 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (!raw) return structuredClone(DEFAULTS);
     const s = JSON.parse(raw);
-    return { ...structuredClone(DEFAULTS), ...s, settings: { ...DEFAULTS.settings, ...s.settings } };
+    return { ...structuredClone(DEFAULTS), ...s, settings: { ...DEFAULTS.settings, ...s.settings }, syllabus: s.syllabus || {} };
   } catch {
     return structuredClone(DEFAULTS);
   }
@@ -49,6 +50,9 @@ export const store = {
   },
   clearChat(key) { delete state.chats[key]; save(); },
 
+  topicState(id) { return state.syllabus[id] || ""; },
+  setTopicState(id, v) { if (v) state.syllabus[id] = v; else delete state.syllabus[id]; save(); },
+
   resetProgress() { state.practice = []; state.tests = []; save(); },
-  exportData() { return JSON.stringify(state, null, 2); },
+  exportData() { return JSON.stringify({ ...state, settings: { ...state.settings, geminiKey: "", accessCode: "" } }, null, 2); },
 };

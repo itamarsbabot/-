@@ -3,7 +3,8 @@ import { h, setRich, toast, renderRich } from "../render.js";
 import { store } from "../store.js";
 import { askTutor, extractJSON } from "../api.js";
 import { Composer } from "../composer.js";
-import { SUBJECTS } from "../curriculum.js";
+import { SUBJECTS, allTopics } from "../curriculum.js";
+import { pickerTopics } from "../topics.js";
 import { loading, errorBox } from "./practice.js";
 import { guard } from "../guard.js";
 
@@ -15,7 +16,8 @@ const KIND = {
 export function testView(kind) {
   const K = KIND[kind];
   const subject = store.subject;
-  const topics = SUBJECTS[subject].topics;
+  const topics = pickerTopics(subject);
+  const moreTopics = allTopics(subject).map((t) => t.name).filter((n) => !topics.includes(n));
   const chosen = new Set();
   let ctrl = null;
   let timer = null;
@@ -26,7 +28,7 @@ export function testView(kind) {
   function setup() {
     guard.leave = null;
     const weak = weakTopics(subject);
-    const chips = h("div", { class: "chips wrap" }, ...topics.map((t) => {
+    const chip = (t) => {
       const b = h("button", { type: "button", class: "chip" + (weak.includes(t) ? " weak" : ""), onclick: () => {
         if (chosen.has(t)) chosen.delete(t);
         else if (chosen.size >= K.maxTopics) return toast(`עד ${K.maxTopics} נושאים`);
@@ -35,7 +37,11 @@ export function testView(kind) {
       } }, t);
       b.classList.toggle("on", chosen.has(t));
       return b;
-    }));
+    };
+    const chips = h("div", {},
+      h("div", { class: "chips wrap" }, ...topics.map(chip)),
+      moreTopics.length ? h("details", { class: "more-topics" }, h("summary", {}, "עוד נושאים מהסילבוס"),
+        h("div", { class: "chips wrap" }, ...moreTopics.map(chip))) : null);
     const minutes = h("select", { class: "select" },
       ...[K.minutes, Math.round(K.minutes * 1.25), Math.round(K.minutes * 1.5), 0].map((m) =>
         h("option", { value: m }, m ? `${m} דקות` : "בלי הגבלת זמן")));
@@ -204,7 +210,7 @@ export function weakTopics(subject) {
   }
   const weak = Object.entries(by).filter(([, s]) => s.length >= 2 && s.reduce((a, b) => a + b, 0) / s.length < 70).map(([t]) => t);
   for (const t of store.tests.filter((t) => t.subject === subject).slice(-3)) for (const w of t.weak_topics || []) {
-    const match = SUBJECTS[subject].topics.find((x) => w.includes(x) || x.includes(w));
+    const match = allTopics(subject).map((t) => t.name).find((x) => w.includes(x) || x.includes(w));
     if (match && !weak.includes(match)) weak.push(match);
   }
   return weak;

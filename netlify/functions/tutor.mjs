@@ -1,7 +1,7 @@
 // Server-side proxy to Claude. The API key never reaches the iPad.
 // Env vars: ANTHROPIC_API_KEY (required), TUTOR_ACCESS_CODE (recommended).
 import Anthropic from "@anthropic-ai/sdk";
-import { buildSystemPrompt } from "../lib/prompts.mjs";
+import { buildSystemPrompt } from "../../public/js/prompts.js";
 
 const MODEL = "claude-opus-5-5";
 const client = new Anthropic();
@@ -26,7 +26,7 @@ export default async (req) => {
   } catch {
     return json(400, { error: "bad json" });
   }
-  const { mode = "tutor", subject = "math", messages = [], effort } = body;
+  const { mode = "tutor", subject = "math", messages = [], effort, focus = [] } = body;
   if (!Array.isArray(messages) || messages.length === 0) {
     return json(400, { error: "messages required" });
   }
@@ -44,7 +44,7 @@ export default async (req) => {
           thinking: { type: "adaptive" },
           output_config: { effort: effort || (mode === "exam-grade" || mode === "exam-make" ? "high" : "medium") },
           system: [
-            { type: "text", text: buildSystemPrompt(mode, subject), cache_control: { type: "ephemeral" } },
+            { type: "text", text: buildSystemPrompt(mode, subject, Array.isArray(focus) ? focus.slice(0, 60) : []), cache_control: { type: "ephemeral" } },
           ],
           messages,
         });

@@ -6,6 +6,7 @@ import { testView } from "./views/test.js";
 import { progressView } from "./views/progress.js";
 import { settingsView } from "./views/settings.js";
 import { guard } from "./guard.js";
+import { syllabusView } from "./views/syllabus.js";
 
 const routes = {
   "": homeView,
@@ -16,6 +17,7 @@ const routes = {
   exam: (p) => testView("exam", p),
   progress: progressView,
   settings: settingsView,
+  syllabus: syllabusView,
 };
 
 let cleanup = null;

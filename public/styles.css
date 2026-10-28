@@ -232,3 +232,20 @@ details.sol summary { cursor: pointer; color: var(--accent); margin-top: 6px; }
   .feedback .score { grid-row: auto; }
   .test-bar { top: 52px; }
 }
+
+/* ---- syllabus & settings ---- */
+.grade-title { border-bottom: 2px solid var(--accent); display: inline-block; padding-bottom: 2px; }
+details.unit { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 16px; margin: 10px 0; }
+details.unit > summary { cursor: pointer; font-size: 1.05rem; min-height: 36px; display: list-item; }
+.small-row { margin: 4px 0; }
+.topic { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; border-top: 1px solid var(--border); padding: 10px 0; flex-wrap: wrap; }
+.topic-main { flex: 1 1 260px; }
+.subs { margin: 4px 0 0; padding-inline-start: 18px; color: var(--muted); font-size: 0.9rem; }
+.topic-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.state-btn { font: inherit; font-size: 0.88rem; min-height: 36px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); cursor: pointer; min-width: 128px; }
+.state-btn[data-state="learning"] { background: var(--mid-soft); color: var(--mid); border-color: var(--mid); }
+.state-btn[data-state="done"] { background: var(--good-soft); color: var(--good); border-color: var(--good); }
+details.more-topics summary { cursor: pointer; color: var(--accent); margin: 6px 0; }
+.box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 16px 12px; margin: 8px 0; }
+.ok-text { color: var(--good); } .bad-text { color: var(--bad); }
+a.callout.setup { display: block; margin-top: 18px; text-decoration: none; color: var(--mid); font-weight: 500; }

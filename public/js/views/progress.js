@@ -1,6 +1,7 @@
 import { h } from "../render.js";
 import { store } from "../store.js";
-import { SUBJECTS } from "../curriculum.js";
+import { SUBJECTS, allTopics } from "../curriculum.js";
+import { pickerTopics } from "../topics.js";
 import { weakTopics } from "./test.js";
 
 export function progressView() {
@@ -10,7 +11,8 @@ export function progressView() {
 
   const by = {};
   for (const p of practice) (by[p.topic] ||= []).push(p);
-  const rows = SUBJECTS[subject].topics.map((t) => {
+  const shown = new Set([...pickerTopics(subject), ...Object.keys(by)]);
+  const rows = allTopics(subject).map((t) => t.name).filter((t) => shown.has(t)).map((t) => {
     const list = by[t] || [];
     const recent = list.slice(-10);
     const avg = recent.length ? Math.round(recent.reduce((a, p) => a + p.score, 0) / recent.length) : null;

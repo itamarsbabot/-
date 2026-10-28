@@ -1,9 +1,9 @@
 // Offline shell: app files are cached, the tutor itself needs internet.
-const CACHE = "liya-tutor-v1";
+const CACHE = "liya-tutor-v2";
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest", "icons/icon.svg",
-  "js/app.js", "js/api.js", "js/store.js", "js/render.js", "js/pad.js", "js/composer.js", "js/curriculum.js", "js/guard.js",
-  "js/views/home.js", "js/views/chat.js", "js/views/practice.js", "js/views/test.js", "js/views/progress.js", "js/views/settings.js",
+  "js/app.js", "js/api.js", "js/store.js", "js/render.js", "js/pad.js", "js/composer.js", "js/curriculum.js", "js/guard.js", "js/prompts.js", "js/topics.js",
+  "js/views/home.js", "js/views/chat.js", "js/views/practice.js", "js/views/test.js", "js/views/progress.js", "js/views/settings.js", "js/views/syllabus.js",
   "vendor/katex/katex.min.js", "vendor/katex/katex.min.css", "vendor/marked.min.js",
 ];
 

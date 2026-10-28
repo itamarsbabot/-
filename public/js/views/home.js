@@ -9,6 +9,7 @@ const CARDS = [
   { href: "#/quiz", icon: "⏱️", title: "בוחן", text: "5 שאלות, 20 דקות, ציון ומשוב" },
   { href: "#/exam", icon: "📝", title: "מבחן בגרות", text: "מבחן מלא בסגנון בגרות 5 יח״ל, 90 דקות" },
   { href: "#/progress", icon: "📈", title: "ההתקדמות שלי", text: "ציונים, נושאים חזקים ונושאים לחיזוק" },
+  { href: "#/syllabus", icon: "🗂️", title: "הסילבוס", text: "כל החומר של 5 יח״ל – מסמנים מה כבר למדנו" },
 ];
 
 function greeting() {
@@ -32,8 +33,8 @@ export function homeView() {
         h("span", { class: "card-icon", "aria-hidden": "true" }, c.icon),
         h("span", { class: "card-title" }, c.title),
         h("span", { class: "card-text" }, c.text)))),
-    !store.settings.accessCode ? h("p", { class: "muted small center" },
-      "פעם ראשונה? אם האפליקציה מבקשת קוד גישה – ", h("a", { href: "#/settings" }, "הכניסי אותו בהגדרות"), ".") : null,
+    store.settings.provider === "gemini" && !store.settings.geminiKey ? h("a", { class: "callout setup", href: "#/settings" },
+      "👋 פעם ראשונה? צריך לחבר את המורה – הכניסי מפתח Gemini חינמי בהגדרות ←") : null,
   );
   return { el };
 }
