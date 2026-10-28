@@ -249,3 +249,7 @@ details.more-topics summary { cursor: pointer; color: var(--accent); margin: 6px
 .box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 16px 12px; margin: 8px 0; }
 .ok-text { color: var(--good); } .bad-text { color: var(--bad); }
 a.callout.setup { display: block; margin-top: 18px; text-decoration: none; color: var(--mid); font-weight: 500; }
+
+/* ---- footer ---- */
+.site-footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
+.site-footer a { color: inherit; }
