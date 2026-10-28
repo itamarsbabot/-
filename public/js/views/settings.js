@@ -69,6 +69,7 @@ export function settingsView() {
     h("div", { class: "view-head" }, h("h2", {}, "הגדרות")),
     h("label", { class: "field col" }, h("span", {}, "שם התלמידה"), name),
     h("label", { class: "field" }, pen, h("span", {}, "עט בלבד – כף היד והאצבע לא כותבות על המשטח (מומלץ עם Apple Pencil)")),
+    themeSwitch(),
     h("h3", {}, "המורה (בינה מלאכותית)"),
     h("label", { class: "field" }, h("span", {}, "ספק"), provider),
     geminiBox, claudeBox,
@@ -102,4 +103,30 @@ export function settingsView() {
       } }, "איפוס התקדמות")),
   );
   return { el };
+}
+
+// Dark-mode switch. Saved immediately; "follow device" clears the choice.
+function themeSwitch() {
+  const sysDark = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark = () => (store.settings.theme || (sysDark() ? "dark" : "light")) === "dark";
+  const input = h("input", { type: "checkbox", role: "switch", "aria-label": "מצב כהה" });
+  const note = h("span", { class: "muted small" });
+  const reset = h("button", { type: "button", class: "link-btn" }, "לפי הגדרות המכשיר");
+  const apply = (theme) => {
+    store.setSetting("theme", theme);
+    if (theme) document.documentElement.dataset.theme = theme;
+    else delete document.documentElement.dataset.theme;
+    sync();
+  };
+  const sync = () => {
+    input.checked = isDark();
+    note.textContent = store.settings.theme ? "" : "(כרגע לפי המכשיר)";
+    reset.hidden = !store.settings.theme;
+  };
+  input.addEventListener("change", () => apply(input.checked ? "dark" : "light"));
+  reset.addEventListener("click", () => apply(""));
+  sync();
+  return h("div", { class: "switch-row" },
+    h("span", {}, "🌙 מצב כהה ", note, " ", reset),
+    h("label", { class: "switch" }, input, h("span", { class: "track" })));
 }
