@@ -8,8 +8,8 @@ import { canSpeak, speak, stopSpeaking, isSpeaking, unlockSpeech } from "../spee
 
 let handoff = null;
 // Open a chat with a first message already sent (e.g. from a practice question).
-export function openChatWith(mode, text) {
-  handoff = { mode, text };
+export function openChatWith(mode, text, images = []) {
+  handoff = { mode, text, images };
   location.hash = `#/${mode}`;
 }
 
@@ -170,8 +170,9 @@ export function chatView(mode) {
   renderAll();
   if (handoff && handoff.mode === mode) {
     const t = handoff.text;
+    const imgs = handoff.images || [];
     handoff = null;
-    queueMicrotask(() => send({ text: t, images: [] }));
+    queueMicrotask(() => send({ text: t, images: imgs }));
   }
   return { el, cleanup: () => { ctrl?.abort(); stopSpeaking(); } };
 }

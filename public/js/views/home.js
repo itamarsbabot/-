@@ -1,6 +1,38 @@
 import { h } from "../render.js";
 import { store } from "../store.js";
 import { SUBJECTS } from "../curriculum.js";
+import { fileToImage } from "../api.js";
+import { openChatWith } from "./chat.js";
+import { toast } from "../render.js";
+
+const PAGE_ASK = "הנה דף שאני עובדת עליו. תגידי בקצרה מה רואים בדף, ושאלי אותי באיזו שאלה אני צריכה עזרה.";
+
+// Big "photograph a page" button: opens the camera straight away (the tap itself
+// must open it on iOS), then sends the photo to homework help.
+function photoButton() {
+  const camera = h("input", { type: "file", accept: "image/*", capture: "environment", hidden: true });
+  const gallery = h("input", { type: "file", accept: "image/*", hidden: true });
+  const go = async (input) => {
+    const f = input.files?.[0];
+    input.value = "";
+    if (!f) return;
+    try {
+      const im = await fileToImage(f);
+      openChatWith("homework", PAGE_ASK, [im]);
+    } catch {
+      toast("לא הצלחתי לקרוא את התמונה – נסי שוב");
+    }
+  };
+  camera.addEventListener("change", () => go(camera));
+  gallery.addEventListener("change", () => go(gallery));
+  return h("div", { class: "photo-cta" },
+    h("button", { type: "button", class: "photo-btn", onclick: () => camera.click() },
+      h("span", { class: "photo-icon", "aria-hidden": "true" }, "📷"),
+      h("span", {}, h("b", {}, "צלמי דף"), h("small", {}, "שאלה תקועה? צלמי ותקבלי עזרה")),
+    ),
+    h("button", { type: "button", class: "link-btn", onclick: () => gallery.click() }, "או בחרי תמונה מהגלריה"),
+    camera, gallery);
+}
 
 const CARDS = [
   { href: "#/tutor", icon: "🎓", title: "שיעור פרטי", text: "הסבר נושא, שאלות, ללמוד חומר חדש – צעד אחר צעד" },
@@ -28,6 +60,7 @@ export function homeView() {
       h("p", { class: "muted" }, `${subj.full} · מה עושים היום?`),
       recent.length ? h("p", { class: "stat-line" }, `השבוע: ${recent.length} שאלות תרגול · ממוצע ${avg}`) : null,
     ),
+    photoButton(),
     h("div", { class: "cards" },
       ...CARDS.map((c) => h("a", { class: "card", href: c.href },
         h("span", { class: "card-icon", "aria-hidden": "true" }, c.icon),

@@ -312,3 +312,11 @@ a.callout.setup { display: block; margin-top: 18px; text-decoration: none; color
   .lbl-short { display: inline; }
   .subject-switch button { padding: 6px 10px; }
 }
+
+/* ---- "photograph a page" button on home ---- */
+.photo-cta { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 18px 0 6px; }
+.photo-btn { display: flex; align-items: center; gap: 16px; width: 100%; max-width: 560px; padding: 18px 22px; border: 0; border-radius: 20px; background: var(--accent); color: var(--accent-text); font: inherit; text-align: start; cursor: pointer; box-shadow: var(--shadow); }
+.photo-btn:active { transform: scale(0.98); }
+.photo-icon { font-size: 2.4rem; line-height: 1; }
+.photo-btn b { display: block; font-size: 1.35rem; }
+.photo-btn small { display: block; opacity: .9; font-size: 0.95rem; }
