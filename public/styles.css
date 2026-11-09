@@ -22,6 +22,7 @@
   color-scheme: light;
 }
 :root[data-subject="physics"] { --accent: #0e7490; --accent-soft: #cffafe; --user-bubble: #0e7490; --grid: rgb(14 116 144 / 0.1); }
+:root[data-subject="biotech"] { --accent: #047857; --accent-soft: #d1fae5; --user-bubble: #047857; --grid: rgb(4 120 87 / 0.1); }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -31,6 +32,7 @@
     --user-bubble: #4f46e5; --shadow: none; --grid: rgb(129 140 248 / 0.12); color-scheme: dark;
   }
   :root:not([data-theme="light"])[data-subject="physics"] { --accent: #22d3ee; --accent-soft: #123b44; --user-bubble: #0e7490; }
+  :root:not([data-theme="light"])[data-subject="biotech"] { --accent: #34d399; --accent-soft: #0f3b2c; --user-bubble: #047857; }
 }
 :root[data-theme="dark"] {
   --bg: #0f1117; --surface: #181b24; --surface-2: #222634; --text: #eef0f6; --muted: #9aa1b2;
@@ -39,6 +41,7 @@
   --user-bubble: #4f46e5; --shadow: none; --grid: rgb(129 140 248 / 0.12); color-scheme: dark;
 }
 :root[data-theme="dark"][data-subject="physics"] { --accent: #22d3ee; --accent-soft: #123b44; --user-bubble: #0e7490; }
+:root[data-theme="dark"][data-subject="biotech"] { --accent: #34d399; --accent-soft: #0f3b2c; --user-bubble: #047857; }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -301,3 +304,11 @@ a.callout.setup { display: block; margin-top: 18px; text-decoration: none; color
 .visual-error { color: var(--muted); font-size: 0.9rem; }
 .bubble.user .visual { color: #111827; }
 .composer.compact .comp-text { min-height: 40px; }
+
+/* subject switch: short label for biotech on narrow screens */
+.lbl-short { display: none; }
+@media (max-width: 560px) {
+  .lbl-full { display: none; }
+  .lbl-short { display: inline; }
+  .subject-switch button { padding: 6px 10px; }
+}
