@@ -7,6 +7,9 @@ import { progressView } from "./views/progress.js";
 import { settingsView } from "./views/settings.js";
 import { guard } from "./guard.js";
 import { syllabusView } from "./views/syllabus.js";
+import { seedLearnedTopics } from "./topics.js";
+
+seedLearnedTopics();
 
 const routes = {
   "": homeView,
