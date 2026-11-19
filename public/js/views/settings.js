@@ -1,6 +1,6 @@
 import { h, toast } from "../render.js";
 import { store } from "../store.js";
-import { checkGeminiKey } from "../api.js";
+import { checkGeminiKey, modelLabel } from "../api.js";
 
 export function settingsView() {
   const S = store.settings;
@@ -17,10 +17,16 @@ export function settingsView() {
   const model = h("select", { class: "select", dir: "ltr", "aria-label": "מודל" });
   const status = h("p", { class: "small" });
   const fillModels = (list, chosen) => {
-    model.replaceChildren(...(list.length ? list : ["gemini-2.5-flash"]).map((m) => h("option", { value: m }, m)));
+    model.replaceChildren(...(list.length ? list : ["gemini-4-hydrogen"]).map((m) => h("option", { value: m }, modelLabel(m))));
     if (chosen && list.includes(chosen)) model.value = chosen;
   };
   fillModels(S.geminiModels || [], S.geminiModel);
+  // Picking a model by hand is saved right away and kept on later refreshes.
+  model.addEventListener("change", () => {
+    store.setSetting("geminiModel", model.value);
+    store.setSetting("geminiModelManual", true);
+    toast("המודל נשמר ✓");
+  });
 
   const check = h("button", { class: "btn", type: "button", onclick: async () => {
     const k = key.value.trim();
@@ -33,6 +39,8 @@ export function settingsView() {
       store.setSetting("geminiKey", k);
       store.setSetting("geminiModels", list.slice(0, 8));
       store.setSetting("geminiModel", list[0]);
+      store.setSetting("geminiModelManual", false);
+      store.setSetting("modelsCheckedAt", Date.now());
       fillModels(list.slice(0, 8), list[0]);
       status.textContent = `✓ מחובר! נבחר המודל ${list[0]}`;
       status.className = "small ok-text";
@@ -79,7 +87,7 @@ export function settingsView() {
         store.setSetting("penOnly", pen.checked);
         store.setSetting("provider", provider.value);
         store.setSetting("geminiKey", key.value.trim());
-        if (model.value) store.setSetting("geminiModel", model.value);
+        if (model.value && model.value !== store.settings.geminiModel) { store.setSetting("geminiModel", model.value); store.setSetting("geminiModelManual", true); }
         store.setSetting("accessCode", code.value.trim());
         toast("נשמר ✓");
       } }, "שמירה")),
