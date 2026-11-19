@@ -9,8 +9,8 @@ export function settingsView() {
 
   // --- AI provider ---
   const provider = h("select", { class: "select" },
-    h("option", { value: "gemini" }, "Gemini של גוגל (חינם)"),
-    h("option", { value: "claude" }, "Claude (דרך שרת Netlify, בתשלום)"));
+    h("option", { value: "gemini" }, "Gemini של גוגל (חינמי או בתשלום – לפי המפתח)"),
+    h("option", { value: "claude" }, "Claude (דרך שרת Netlify)"));
   provider.value = S.provider || "gemini";
 
   const key = h("input", { class: "input", type: "password", value: S.geminiKey, autocomplete: "off", placeholder: "AIza…", dir: "ltr", "aria-label": "מפתח Gemini" });
