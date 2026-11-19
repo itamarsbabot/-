@@ -5,6 +5,7 @@ import { Composer } from "../composer.js";
 import { SUBJECTS, DIFFICULTY } from "../curriculum.js";
 import { openChatWith, topicOptions } from "./chat.js";
 import { canSpeak, speak, stopSpeaking, isSpeaking } from "../speech.js";
+import { goodnotesButton } from "../goodnotes.js";
 
 function speakBtn(getText) {
   if (!canSpeak) return null;
@@ -68,7 +69,11 @@ export function practiceView(params = {}) {
     const checkBtn = h("button", { class: "btn primary", onclick: () => grade(composer, checkBtn) }, "בדקי את התשובה ✓");
     stage.replaceChildren(
       h("article", { class: "q-card" },
-        h("div", { class: "q-meta" }, h("span", { class: "tag" }, current.topic), h("span", { class: "tag soft" }, `קושי ${difficulty}`), h("span", { class: "spacer" }), speakBtn(() => current.question)),
+        h("div", { class: "q-meta" }, h("span", { class: "tag" }, current.topic), h("span", { class: "tag soft" }, `קושי ${difficulty}`), h("span", { class: "spacer" }), speakBtn(() => current.question),
+          goodnotesButton("📤", () => ({
+            title: `תרגול – ${current.topic}`,
+            blocks: [{ md: current.question, answerSpace: 420 }, ...(stage.querySelector(".solution") ? [{ title: "פתרון", md: `${current.solution}\n\n**תשובה סופית:** ${current.final_answer}` }] : [])],
+          }))),
         q),
       composer.el,
       h("div", { class: "row" },

@@ -1,7 +1,7 @@
 // Answer box: keyboard text + quick math symbols + Apple Pencil pad + photo.
 import { h, toast } from "./render.js";
 import { PencilPad } from "./pad.js";
-import { fileToImage } from "./api.js";
+import { fileToAttachment, ATTACH_ACCEPT } from "./goodnotes.js";
 import { canListen, listen } from "./speech.js";
 
 const SYMBOLS = [
@@ -21,6 +21,11 @@ export class Composer {
 
     this.text = h("textarea", { class: "comp-text", rows: compact ? 1 : 3, placeholder, dir: "auto" });
     this.text.addEventListener("input", () => this.autosize());
+    // Paste an image (e.g. copied in GoodNotes with the lasso tool, or a screenshot).
+    this.text.addEventListener("paste", (e) => {
+      const files = [...(e.clipboardData?.items || [])].filter((it) => it.kind === "file").map((it) => it.getAsFile()).filter(Boolean);
+      if (files.length) { e.preventDefault(); this.addFiles(files); }
+    });
     this.text.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && this.onSend) { e.preventDefault(); this.send(); }
     });
@@ -34,12 +39,12 @@ export class Composer {
     this.thumbs = h("div", { class: "thumbs" });
     this.padHolder = h("div", { class: "pad-holder" });
 
-    this.file = h("input", { type: "file", accept: "image/*", multiple: true, hidden: true, onchange: (e) => this.addFiles(e.target.files) });
+    this.file = h("input", { type: "file", accept: ATTACH_ACCEPT, multiple: true, hidden: true, onchange: (e) => this.addFiles(e.target.files) });
 
     this.padBtn = h("button", { type: "button", class: "chip", onclick: () => this.togglePad() }, "✏️ כתב יד");
     const actions = h("div", { class: "comp-actions" },
       this.padBtn,
-      h("button", { type: "button", class: "chip", onclick: () => this.file.click() }, "📷 צילום / תמונה"),
+      h("button", { type: "button", class: "chip", onclick: () => this.file.click() }, "📷 תמונה / קובץ"),
       this.symBtn = h("button", { type: "button", class: "chip", onclick: () => this.toggleSymbols() }, "∑ סימנים"),
       h("span", { class: "spacer" }),
       mic && canListen ? (this.micBtn = h("button", { type: "button", class: "mic-btn", "aria-label": "דיבור", title: "לחצי ודברי", onclick: () => this.toggleMic() }, "🎙️")) : null,
@@ -110,10 +115,9 @@ export class Composer {
   async addFiles(files) {
     for (const f of files) {
       try {
-        const im = await fileToImage(f);
-        this.images.push(im);
-      } catch {
-        toast("לא הצלחתי לקרוא את התמונה");
+        this.images.push(await fileToAttachment(f));
+      } catch (e) {
+        toast(e?.message?.includes("גדול") ? e.message : "לא הצלחתי לקרוא את הקובץ", 5000);
       }
     }
     this.file.value = "";
@@ -122,7 +126,7 @@ export class Composer {
 
   renderThumbs() {
     this.thumbs.replaceChildren(...this.images.map((im, i) =>
-      h("div", { class: "thumb" }, h("img", { src: im.preview, alt: "תמונה מצורפת" }),
+      h("div", { class: "thumb" }, im.pdf ? h("span", { class: "thumb-file" }, "📄 ", im.name || "PDF") : h("img", { src: im.preview, alt: "תמונה מצורפת" }),
         h("button", { type: "button", "aria-label": "הסר", onclick: () => { this.images.splice(i, 1); this.renderThumbs(); } }, "×"))));
   }
 
