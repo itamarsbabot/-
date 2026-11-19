@@ -19,7 +19,7 @@ function toGeminiContents(messages) {
   return messages.map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
     parts: (typeof m.content === "string" ? [{ type: "text", text: m.content }] : m.content).map((p) =>
-      p.type === "image"
+      p.type === "image" || p.type === "document"
         ? { inlineData: { mimeType: p.source.media_type, data: p.source.data } }
         : { text: p.text || " " }),
   }));
@@ -199,8 +199,9 @@ async function askClaudeServer({ mode, subject, messages, focus, onText, signal 
 
 // Build a user message from text + images ({data, mediaType}).
 export function userContent(text, images = []) {
+  // images = photos, handwriting, or PDFs (e.g. exported from GoodNotes)
   const parts = images.map((im) => ({
-    type: "image",
+    type: im.mediaType === "application/pdf" ? "document" : "image",
     source: { type: "base64", media_type: im.mediaType, data: im.data },
   }));
   if (text) parts.push({ type: "text", text });
@@ -209,8 +210,13 @@ export function userContent(text, images = []) {
 
 // Pull a JSON object out of the model's reply, repairing un-doubled LaTeX backslashes.
 export function extractJSON(text) {
-  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  let s = fence ? fence[1] : text;
+  // The reply is either raw JSON (Gemini JSON mode) or JSON in a ```json fence.
+  // Careful: strings inside the JSON may contain ```plot / ```svg fences of their own.
+  let s = text.trim();
+  if (!s.startsWith("{")) {
+    const fence = s.match(/```json\s*([\s\S]*)```/) || s.match(/^```\s*([\s\S]*)```\s*$/);
+    if (fence) s = fence[1];
+  }
   const a = s.indexOf("{"), b = s.lastIndexOf("}");
   if (a < 0 || b < a) throw new Error("לא התקבלה תשובה תקינה מהמורה");
   s = repairBackslashes(s.slice(a, b + 1));

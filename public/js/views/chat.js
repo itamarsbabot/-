@@ -5,6 +5,7 @@ import { Composer } from "../composer.js";
 import { SUBJECTS, allTopics } from "../curriculum.js";
 import { pickerTopics } from "../topics.js";
 import { canSpeak, speak, stopSpeaking, isSpeaking, unlockSpeech } from "../speech.js";
+import { goodnotesButton } from "../goodnotes.js";
 
 let handoff = null;
 // Open a chat with a first message already sent (e.g. from a practice question).
@@ -61,7 +62,9 @@ export function chatView(mode) {
     if (m.role === "assistant") setRich(body, m.text || "");
     else {
       if (m.text) setRich(body, m.text);
-      for (const im of m.images || []) body.append(h("img", { class: "msg-img", src: im.preview, alt: im.handwriting ? "כתב יד" : "תמונה" }));
+      for (const im of m.images || []) body.append(im.pdf
+        ? h("div", { class: "msg-file" }, "📄 ", im.name || "קובץ PDF")
+        : h("img", { class: "msg-img", src: im.preview, alt: im.handwriting ? "כתב יד" : "תמונה" }));
       if (m.hadImage && !(m.images || []).length) body.append(h("div", { class: "muted small" }, "📎 תמונה"));
     }
     const tools = m.role === "assistant" && m.text ? h("div", { class: "bubble-tools" }, speakButton(() => m.text)) : null;
@@ -160,6 +163,14 @@ export function chatView(mode) {
     h("div", { class: "view-head" },
       h("h2", {}, title, h("span", { class: "muted" }, ` · ${SUBJECTS[subject].name}`)),
       h("div", { class: "row tight" }, voiceBtn,
+      goodnotesButton("📤 GoodNotes", () => ({
+        title: `${title} – ${SUBJECTS[subject].name}`,
+        blocks: msgs.length
+          ? msgs.map((m) => m.role === "user"
+              ? { title: "❓ " + store.settings.name, md: (m.text || "") + ((m.images || []).length || m.hadImage ? "\n\n_(צורפה תמונה או קובץ)_" : ""), boxed: true }
+              : { md: m.text || "" })
+          : [{ md: "_עדיין אין שיחה._" }],
+      })),
       h("button", { class: "btn ghost small", onclick: () => {
         if (!msgs.length || confirm("להתחיל שיחה חדשה? השיחה הנוכחית תימחק.")) { ctrl?.abort(); msgs = []; store.clearChat(key); renderAll(); }
       } }, "שיחה חדשה"))),

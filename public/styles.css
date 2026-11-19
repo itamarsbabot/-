@@ -320,3 +320,22 @@ a.callout.setup { display: block; margin-top: 18px; text-decoration: none; color
 .photo-icon { font-size: 2.4rem; line-height: 1; }
 .photo-btn b { display: block; font-size: 1.35rem; }
 .photo-btn small { display: block; opacity: .9; font-size: 0.95rem; }
+
+/* ---- GoodNotes: upload box + the hidden page used to build PDFs ---- */
+.gn-upload { background: var(--surface); border: 1px dashed var(--accent); border-radius: var(--radius); padding: 12px 16px; margin: 14px 0; }
+.gn-upload p { margin: 4px 0 8px; }
+.thumb-file { display: inline-flex; align-items: center; height: 72px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); font-size: 0.9rem; max-width: 220px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.msg-file { margin-top: 6px; padding: 6px 10px; border-radius: 8px; background: rgb(255 255 255 / .15); }
+.gn-btn { white-space: nowrap; }
+.pdf-host { position: absolute; left: -10000px; top: 0; width: 794px; pointer-events: none; }
+.pdf-doc { width: 794px; box-sizing: border-box; padding: 48px 56px; background: #fff; color: #111827; font-family: "Rubik", system-ui, -apple-system, Arial, sans-serif; font-size: 16px; line-height: 1.65; }
+.pdf-doc h1 { font-size: 26px; margin: 0 0 4px; color: #111827; }
+.pdf-doc h2 { font-size: 19px; margin: 18px 0 6px; color: #111827; }
+.pdf-sub, .pdf-meta { color: #6b7280; font-size: 13px; }
+.pdf-head { border-bottom: 2px solid #4f46e5; padding-bottom: 10px; margin-bottom: 14px; }
+.pdf-block { padding: 4px 0; }
+.pdf-box { background: #eef2ff; border-radius: 10px; padding: 10px 14px; margin: 12px 0; }
+.pdf-md p { margin: 6px 0; }
+.pdf-doc .katex { color: #111827; }
+.pdf-doc .visual { border-color: #e5e7eb; }
+.pdf-lines { margin: 8px 0 16px; border: 1px solid #e5e7eb; border-radius: 8px; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, #e5e7eb 31px, #e5e7eb 32px); }

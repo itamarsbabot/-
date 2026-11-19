@@ -1,7 +1,7 @@
 import { h } from "../render.js";
 import { store } from "../store.js";
 import { SUBJECTS } from "../curriculum.js";
-import { fileToImage } from "../api.js";
+import { fileToAttachment, ATTACH_ACCEPT } from "../goodnotes.js";
 import { openChatWith } from "./chat.js";
 import { toast } from "../render.js";
 
@@ -11,13 +11,13 @@ const PAGE_ASK = "הנה דף שאני עובדת עליו. תגידי בקצר�
 // must open it on iOS), then sends the photo to homework help.
 function photoButton() {
   const camera = h("input", { type: "file", accept: "image/*", capture: "environment", hidden: true });
-  const gallery = h("input", { type: "file", accept: "image/*", hidden: true });
+  const gallery = h("input", { type: "file", accept: ATTACH_ACCEPT, hidden: true });
   const go = async (input) => {
     const f = input.files?.[0];
     input.value = "";
     if (!f) return;
     try {
-      const im = await fileToImage(f);
+      const im = await fileToAttachment(f);
       openChatWith("homework", PAGE_ASK, [im]);
     } catch {
       toast("לא הצלחתי לקרוא את התמונה – נסי שוב");
@@ -30,7 +30,7 @@ function photoButton() {
       h("span", { class: "photo-icon", "aria-hidden": "true" }, "📷"),
       h("span", {}, h("b", {}, "צלמי דף"), h("small", {}, "שאלה תקועה? צלמי ותקבלי עזרה")),
     ),
-    h("button", { type: "button", class: "link-btn", onclick: () => gallery.click() }, "או בחרי תמונה מהגלריה"),
+    h("button", { type: "button", class: "link-btn", onclick: () => gallery.click() }, "או בחרי תמונה / PDF (גם מ-GoodNotes)"),
     camera, gallery);
 }
 

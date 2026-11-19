@@ -7,6 +7,25 @@ import { SUBJECTS, allTopics } from "../curriculum.js";
 import { pickerTopics } from "../topics.js";
 import { loading, errorBox } from "./practice.js";
 import { guard } from "../guard.js";
+import { goodnotesButton, fileToAttachment, ATTACH_ACCEPT } from "../goodnotes.js";
+
+const asBlock = (im) => ({ type: im.mediaType === "application/pdf" ? "document" : "image", source: { type: "base64", media_type: im.mediaType, data: im.data } });
+
+// The exam as blocks for a PDF; with answer space to solve in GoodNotes, or with results.
+function examBlocks(test, { space = false, results = null } = {}) {
+  const byKey = new Map((results?.items || []).map((it) => [`${it.id}|${it.label || ""}`, it]));
+  const blocks = [];
+  test.questions.forEach((q, qi) => {
+    blocks.push({ title: `שאלה ${qi + 1}${q.topic ? ` · ${q.topic}` : ""}`, md: q.stem || "" });
+    for (const p of q.parts || []) {
+      const it = byKey.get(`${q.id}|${p.label || ""}`);
+      let md = `${p.label ? `**${p.label}.** ` : ""}${p.text} _(${p.points} נק׳)_`;
+      if (it) md += `\n\n**ציון: ${it.score ?? 0}/${it.max ?? p.points}** – ${it.feedback || ""}\n\n**פתרון:** ${p.solution || ""}\n\n**תשובה:** ${p.answer || ""}`;
+      blocks.push({ md, answerSpace: space ? 260 : 0 });
+    }
+  });
+  return blocks;
+}
 
 const KIND = {
   quiz: { name: "בוחן", make: "quiz-make", minutes: 20, maxTopics: 3, desc: "5 שאלות קצרות בהדרגת קושי · 20 דקות" },
@@ -118,15 +137,39 @@ export function testView(kind) {
         stem, ...parts);
     });
 
+    // Solved on paper / in GoodNotes? Upload the pages (PDF or photos) for the whole exam.
+    const gnFiles = [];
+    const gnList = h("div", { class: "thumbs" });
+    const gnInput = h("input", { type: "file", accept: ATTACH_ACCEPT, multiple: true, hidden: true });
+    const drawFiles = () => gnList.replaceChildren(...gnFiles.map((f, i) => h("div", { class: "thumb" },
+      f.pdf ? h("span", { class: "thumb-file" }, "📄 ", f.name || "PDF") : h("img", { src: f.preview, alt: "דף פתרון" }),
+      h("button", { type: "button", "aria-label": "הסר", onclick: () => { gnFiles.splice(i, 1); drawFiles(); } }, "×"))));
+    gnInput.addEventListener("change", async () => {
+      for (const f of gnInput.files) {
+        try { gnFiles.push(await fileToAttachment(f)); } catch (e) { toast(e?.message || "לא הצלחתי לקרוא את הקובץ", 5000); }
+      }
+      gnInput.value = "";
+      drawFiles();
+    });
+    const gnBox = h("div", { class: "gn-upload" },
+      h("b", {}, "📥 פתרת ב-GoodNotes או על דף?"),
+      h("p", { class: "muted small" }, "אפשר להעלות את כל הפתרון בבת אחת – PDF מ-GoodNotes או צילומים של הדפים. אין צורך למלא גם את התיבות."),
+      h("button", { type: "button", class: "btn", onclick: () => gnInput.click() }, "העלאת הפתרון"),
+      gnList, gnInput);
+
     const submitBtn = h("button", { class: "btn primary big", onclick: () => {
       const empty = [...answers.values()].filter((c) => c.isEmpty()).length;
-      if (empty && !confirm(`יש ${empty} סעיפים בלי תשובה. להגיש בכל זאת?`)) return;
+      if (empty && !gnFiles.length && !confirm(`יש ${empty} סעיפים בלי תשובה. להגיש בכל זאת?`)) return;
       submit();
     } }, `הגשה לבדיקה ✓`);
 
     root.replaceChildren(
-      h("div", { class: "test-bar" }, h("b", {}, test.title || K.name), clock),
+      h("div", { class: "test-bar" }, h("b", {}, test.title || K.name),
+        h("div", { class: "row tight" },
+          goodnotesButton("📤 לפתור ב-GoodNotes", () => ({ title: test.title || K.name, blocks: examBlocks(test, { space: true }) })),
+          clock)),
       ...qs,
+      gnBox,
       h("div", { class: "row center" }, submitBtn));
 
     async function submit() {
@@ -141,7 +184,11 @@ export function testView(kind) {
       for (const q of test.questions) for (const p of q.parts || []) {
         const v = answers.get(`${q.id}|${p.label}`).value();
         content.push({ type: "text", text: `\n— שאלה ${q.id}${p.label ? ` סעיף ${p.label}` : ""}: ${v.text || (v.images.length ? "(ראי תמונה)" : "(לא נענה)")}` });
-        for (const im of v.images) content.push({ type: "image", source: { type: "base64", media_type: im.mediaType, data: im.data } });
+        for (const im of v.images) content.push(asBlock(im));
+      }
+      if (gnFiles.length) {
+        content.push({ type: "text", text: "\n\nבנוסף, ליה פתרה את המבחן על דף / ב-GoodNotes. אלה דפי הפתרון שלה – בדקי לפיהם כל סעיף (ובמקרה של סתירה, הדפים קובעים):" });
+        for (const f of gnFiles) content.push(asBlock(f));
       }
 
       ctrl = new AbortController();
@@ -185,6 +232,10 @@ export function testView(kind) {
         (r.weak_topics || []).length ? h("p", {}, "לחזק: ", ...(r.weak_topics).map((t) => h("span", { class: "tag warn" }, t))) : null),
       ...cards,
       h("div", { class: "row center" },
+        goodnotesButton("📤 שמירה ב-GoodNotes", () => ({
+          title: `${test.title || K.name} – ציון ${grade}`,
+          blocks: [{ title: "סיכום", md: `**ציון: ${grade}/100**\n\n${r.summary || ""}`, boxed: true }, ...examBlocks(test, { results: r })],
+        })),
         h("button", { class: "btn primary", onclick: setup }, `${K.name} חדש`),
         h("a", { class: "btn ghost", href: "#/practice" }, "לתרגול"),
         h("a", { class: "btn ghost", href: "#/progress" }, "להתקדמות")));
