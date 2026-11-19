@@ -8,8 +8,11 @@ import { settingsView } from "./views/settings.js";
 import { guard } from "./guard.js";
 import { syllabusView } from "./views/syllabus.js";
 import { seedLearnedTopics } from "./topics.js";
+import { refreshModels } from "./api.js";
 
 seedLearnedTopics();
+// Keep the Gemini model list current (new models, retired ones) – quietly.
+refreshModels().catch(() => {});
 
 const routes = {
   "": homeView,

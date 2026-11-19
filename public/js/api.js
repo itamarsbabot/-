@@ -13,7 +13,7 @@ export async function askTutor({ mode, subject, messages, onText, signal }) {
 
 // ---------- Gemini (free tier, called straight from the device) ----------
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
-const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
+const FALLBACK_MODELS = ["gemini-4-hydrogen", "gemini-3.8-flash", "gemini-2.5-flash"];
 
 function toGeminiContents(messages) {
   return messages.map((m) => ({
@@ -116,15 +116,50 @@ export async function checkGeminiKey(key) {
     .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
     .map((m) => m.name.replace(/^models\//, ""))
     .filter((id) => /^gemini-/.test(id) && !/(image|tts|audio|live|embedding|vision|robotics|computer|native|exp-\d|learnlm)/.test(id));
-  const score = (id) => {
-    const v = parseFloat((id.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || 0);
-    // Flash first (free tier), then Flash-Lite, then Pro (often paid-only); newest version within each.
-    const kind = /flash-lite/.test(id) ? 2 : /flash/.test(id) ? 3 : /pro/.test(id) ? 1 : 0;
-    const stable = /preview|exp/.test(id) ? 0 : 0.5;
-    const alias = /latest/.test(id) ? -0.2 : 0;
-    return kind * 1000 + v * 10 + stable + alias;
-  };
-  return ids.sort((a, b) => score(b) - score(a));
+  return ids.sort((a, b) => modelScore(b) - modelScore(a));
+}
+
+// Which model to prefer: the newest generation first; within it, the fast/cheap
+// tier first (it is also the one on the free tier), then the stronger ones.
+// Gemini 4 uses names instead of Flash/Pro: Hydrogen (fast), Neon (middle),
+// Carbon and Argon (strongest).
+const TIERS = [
+  [/hydrogen/, 30], [/flash-lite/, 20], [/flash/, 30], [/neon/, 25],
+  [/carbon/, 15], [/argon/, 14], [/pro/, 10],
+];
+function modelScore(id) {
+  const v = parseFloat((id.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || 0);
+  const tier = (TIERS.find(([re]) => re.test(id)) || [null, 5])[1];
+  const stable = /preview|exp/.test(id) ? 0 : 0.5;
+  const alias = /latest/.test(id) ? -0.2 : 0;
+  return v * 100 + tier + stable + alias;
+}
+
+// Short Hebrew description for the model picker.
+export function modelLabel(id) {
+  const d =
+    /hydrogen/.test(id) ? "מהיר וחסכוני – מומלץ" :
+    /neon/.test(id) ? "מאוזן – חכם יותר, יקר פי 2" :
+    /carbon|argon/.test(id) ? "הכי חזק – יקר יותר" :
+    /flash-lite/.test(id) ? "הכי זול, פחות חזק" :
+    /flash/.test(id) ? "מהיר וחסכוני" :
+    /pro/.test(id) ? "חזק – יקר יותר" : "";
+  return d ? `${id} · ${d}` : id;
+}
+
+// Refresh the list of models this key can use (new ones appear, retired ones go).
+// Runs quietly at most every 3 days, or right away with force.
+export async function refreshModels(force = false) {
+  const S = store.settings;
+  if (!S.geminiKey || S.provider === "claude") return;
+  if (!force && Date.now() - (S.modelsCheckedAt || 0) < 3 * 864e5) return;
+  const list = (await checkGeminiKey(S.geminiKey)).slice(0, 8);
+  if (!list.length) return;
+  store.setSetting("geminiModels", list);
+  store.setSetting("modelsCheckedAt", Date.now());
+  if (!S.geminiModelManual || !list.includes(S.geminiModel)) store.setSetting("geminiModel", list[0]);
+  return list;
+
 }
 
 // ---------- Claude (optional, through the Netlify server) ----------
